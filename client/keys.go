@@ -77,6 +77,7 @@ The pass backend requires GnuPG: https://gnupg.org/
 		addCmd,
 		keys.ExportKeyCommand(),
 		keys.ImportKeyCommand(),
+		keys.ImportKeyHexCommand(),
 		keys.ListKeysCmd(),
 		keys.ShowKeysCmd(),
 		keys.DeleteKeyCommand(),
