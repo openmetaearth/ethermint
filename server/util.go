@@ -54,6 +54,7 @@ func AddCommands(
 		sdkserver.VersionCmd(),
 		tmcmd.ResetAllCmd,
 		tmcmd.ResetStateCmd,
+		tmcmd.ReIndexEventCmd,
 	)
 
 	startCmd := StartCmd(opts)
