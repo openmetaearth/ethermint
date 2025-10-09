@@ -55,6 +55,7 @@ func AddCommands(
 		tmcmd.ResetAllCmd,
 		tmcmd.ResetStateCmd,
 		sdkserver.BootstrapStateCmd(opts.AppCreator),
+		tmcmd.ReIndexEventCmd,
 	)
 
 	startCmd := StartCmd(opts)
