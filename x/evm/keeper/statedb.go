@@ -86,13 +86,21 @@ func (k *Keeper) ForEachStorage(ctx sdk.Context, addr common.Address, cb func(ke
 }
 
 // SetBalance update account's balance, compare with current balance first, then decide to mint or burn.
+// The input `amount` is in EVM wei (18 decimals), but bank operations use umec (8 decimals).
+// Conversion: umec = wei / 10^10
 func (k *Keeper) SetBalance(ctx sdk.Context, addr common.Address, amount *big.Int) error {
 	cosmosAddr := sdk.AccAddress(addr.Bytes())
 
 	params := k.GetParams(ctx)
+
+	// Convert EVM wei amount to umec for bank operations
+	newBalanceUmec := WeiToUmec(amount)
+
+	// Get current bank balance in umec
 	coin := k.bankKeeper.GetBalance(ctx, cosmosAddr, params.EvmDenom)
-	balance := coin.Amount.BigInt()
-	delta := new(big.Int).Sub(amount, balance)
+	currentBalanceUmec := coin.Amount.BigInt()
+
+	delta := new(big.Int).Sub(newBalanceUmec, currentBalanceUmec)
 	switch delta.Sign() {
 	case 1:
 		// mint
