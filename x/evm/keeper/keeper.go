@@ -320,7 +320,9 @@ func (k *Keeper) GetNonce(ctx sdk.Context, addr common.Address) uint64 {
 	return acct.GetSequence()
 }
 
-// GetBalance load account's balance of gas token
+// GetBalance load account's balance of gas token, converted to EVM 18-decimal wei.
+// Cosmos bank stores umec (8 decimals), EVM operates in wei (18 decimals).
+// wei = umec * 10^10
 func (k *Keeper) GetBalance(ctx sdk.Context, addr common.Address) *big.Int {
 	cosmosAddr := sdk.AccAddress(addr.Bytes())
 	evmParams := k.GetParams(ctx)
@@ -330,7 +332,7 @@ func (k *Keeper) GetBalance(ctx sdk.Context, addr common.Address) *big.Int {
 		return big.NewInt(-1)
 	}
 	coin := k.bankKeeper.GetBalance(ctx, cosmosAddr, evmDenom)
-	return coin.Amount.BigInt()
+	return UmecToWei(coin.Amount.BigInt())
 }
 
 // GetBaseFee returns current base fee, return values:

@@ -2,6 +2,8 @@ package keeper
 
 import (
 	"fmt"
+	"math/big"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -10,7 +12,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/evmos/ethermint/x/evm/types"
 	"github.com/pkg/errors"
-	"math/big"
 )
 
 // evmCallVirtualFrontierBankContract handles EVM call to a virtual frontier bank contract.
@@ -80,7 +81,6 @@ func (k *Keeper) evmCallVirtualFrontierBankContract(
 		}
 
 		bz, err := compiledVFContract.PackOutput("name", vfbcDenomMetadata.Name)
-
 		if err != nil {
 			return types.NewExecVFCError(err)
 		}
@@ -98,7 +98,6 @@ func (k *Keeper) evmCallVirtualFrontierBankContract(
 		}
 
 		bz, err := compiledVFContract.PackOutput("symbol", vfbcDenomMetadata.Symbol)
-
 		if err != nil {
 			return types.NewExecVFCError(err)
 		}
@@ -120,7 +119,6 @@ func (k *Keeper) evmCallVirtualFrontierBankContract(
 		}
 
 		bz, err := compiledVFContract.PackOutput("decimals", uint8(vfbcDenomMetadata.Decimals))
-
 		if err != nil {
 			return types.NewExecVFCError(err)
 		}
@@ -139,8 +137,7 @@ func (k *Keeper) evmCallVirtualFrontierBankContract(
 
 		totalSupply := k.bankKeeper.GetSupply(ctx, bankContractMetadata.MinDenom)
 
-		bz, err := compiledVFContract.PackOutput("totalSupply", totalSupply.Amount.BigInt())
-
+		bz, err := compiledVFContract.PackOutput("totalSupply", UmecToWei(totalSupply.Amount.BigInt()))
 		if err != nil {
 			return types.NewExecVFCError(err)
 		}
@@ -159,7 +156,6 @@ func (k *Keeper) evmCallVirtualFrontierBankContract(
 
 		// unpack the calldata
 		inputs, err := compiledVFContract.UnpackInput("balanceOf", calldata[4:])
-
 		if err != nil {
 			return types.NewExecVFCError(err)
 		}
@@ -176,10 +172,8 @@ func (k *Keeper) evmCallVirtualFrontierBankContract(
 		// get the balance of the address
 		balance := k.bankKeeper.GetBalance(ctx, receiverAddress.Bytes(), bankContractMetadata.MinDenom)
 
-		// pack the output
-
-		bz, err := compiledVFContract.PackOutput("balanceOf", balance.Amount.BigInt())
-
+		// pack the output, converting umec (8 decimals) to wei (18 decimals) for ERC-20 response
+		bz, err := compiledVFContract.PackOutput("balanceOf", UmecToWei(balance.Amount.BigInt()))
 		if err != nil {
 			return types.NewExecVFCError(err)
 		}
@@ -203,7 +197,6 @@ func (k *Keeper) evmCallVirtualFrontierBankContract(
 
 		// unpack the call-data
 		inputs, err := compiledVFContract.UnpackInput("transfer", calldata[4:])
-
 		if err != nil {
 			return types.NewExecVFCError(err)
 		}
@@ -241,7 +234,9 @@ func (k *Keeper) evmCallVirtualFrontierBankContract(
 
 		senderBalance := k.bankKeeper.GetBalance(ctx, sender.Bytes(), bankContractMetadata.MinDenom)
 
-		sendAmount := sdk.NewCoin(bankContractMetadata.MinDenom, sdk.NewIntFromBigInt(amount))
+		// Convert ERC-20 amount from wei (18 decimals) to umec (8 decimals) for bank transfer
+		amountUmec := WeiToUmec(amount)
+		sendAmount := sdk.NewCoin(bankContractMetadata.MinDenom, sdk.NewIntFromBigInt(amountUmec))
 		/*
 			The line above also checks if the amount is negative and if it has more than 256 bits.
 			But let's do explicitly check just for safety, prevent any future issue due to SDK change,

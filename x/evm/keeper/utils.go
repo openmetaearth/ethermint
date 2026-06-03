@@ -124,7 +124,11 @@ func VerifyFee(
 		return sdk.Coins{}, nil
 	}
 
-	return sdk.Coins{{Denom: denom, Amount: sdkmath.NewIntFromBigInt(feeAmt)}}, nil
+	// Convert fee from EVM wei (18 decimals) to umec (8 decimals), rounding up
+	// to ensure fee is never underpaid due to precision loss.
+	feeUmec := WeiToUmecCeil(feeAmt)
+
+	return sdk.Coins{{Denom: denom, Amount: sdkmath.NewIntFromBigInt(feeUmec)}}, nil
 }
 
 // CheckSenderBalance validates that the tx cost value is positive and that the

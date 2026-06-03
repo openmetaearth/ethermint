@@ -52,11 +52,17 @@ func (k *Keeper) RefundGas(ctx sdk.Context, msg core.Message, leftoverGas uint64
 		// negative refund errors
 		return errorsmod.Wrapf(types.ErrInvalidRefund, "refunded amount value cannot be negative %d", remaining.Int64())
 	case 1:
-		// positive amount refund
-		refundedCoins := sdk.Coins{sdk.NewCoin(denom, sdkmath.NewIntFromBigInt(remaining))}
+		// Convert remaining from wei (18 decimals) to umec (8 decimals) for bank refund.
+		// Use truncation (floor) for refund — any sub-umec remainder is kept by the fee collector.
+		refundUmec := WeiToUmec(remaining)
+		if refundUmec.Sign() == 0 {
+			// refund too small to represent in umec, skip
+			break
+		}
+
+		refundedCoins := sdk.Coins{sdk.NewCoin(denom, sdkmath.NewIntFromBigInt(refundUmec))}
 
 		// refund to sender from the fee collector module account, which is the escrow account in charge of collecting tx fees
-
 		err := k.bankKeeper.SendCoinsFromModuleToAccount(ctx, authtypes.FeeCollectorName, msg.From().Bytes(), refundedCoins)
 		if err != nil {
 			err = errorsmod.Wrapf(errortypes.ErrInsufficientFunds, "fee collector account failed to refund fees: %s", err.Error())
