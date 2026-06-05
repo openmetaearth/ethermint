@@ -28,3 +28,12 @@ func WeiToUmecCeil(weiAmount *big.Int) *big.Int {
 	}
 	return result
 }
+
+// IsWeiAmountDivisible checks if a wei amount is exactly divisible by 10^10 (no precision loss).
+func IsWeiAmountDivisible(weiAmount *big.Int) bool {
+	if weiAmount == nil || weiAmount.Sign() == 0 {
+		return true
+	}
+	remainder := new(big.Int).Mod(weiAmount, EvmDecimalConversionFactor)
+	return remainder.Sign() == 0
+}

@@ -97,6 +97,14 @@ func (avd EthAccountVerificationDecorator) AnteHandle(
 		if err := keeper.CheckSenderBalance(sdkmath.NewIntFromBigInt(acct.Balance), txData); err != nil {
 			return ctx, errorsmod.Wrap(err, "failed to check sender balance")
 		}
+
+		// Reject transactions where msg.Value is not divisible by the decimal conversion factor (10^10).
+		// This prevents precision loss when converting from EVM wei (18 decimals) to Cosmos umec (8 decimals).
+		if value := txData.GetValue(); value != nil && !keeper.IsWeiAmountDivisible(value) {
+			return ctx, errorsmod.Wrapf(errortypes.ErrInvalidRequest,
+				"tx value %s is not divisible by %s (minimum transferable unit)",
+				value.String(), keeper.EvmDecimalConversionFactor.String())
+		}
 	}
 	return next(ctx, tx, simulate)
 }
