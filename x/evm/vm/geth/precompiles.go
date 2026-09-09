@@ -18,11 +18,41 @@ package geth
 import (
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/params"
 
 	evm "github.com/evmos/ethermint/x/evm/vm"
 )
+
+func init() {
+	poseidonContract := &PoseidonContract{}
+
+	// Register Poseidon (0x100) in the contract maps
+	if vm.PrecompiledContractsBerlin != nil {
+		vm.PrecompiledContractsBerlin[PoseidonAddress] = poseidonContract
+	}
+	if vm.PrecompiledContractsIstanbul != nil {
+		vm.PrecompiledContractsIstanbul[PoseidonAddress] = poseidonContract
+	}
+	if vm.PrecompiledContractsByzantium != nil {
+		vm.PrecompiledContractsByzantium[PoseidonAddress] = poseidonContract
+	}
+
+	// Register in the active precompile address slices if not already present
+	registerPrecompileAddress := func(addresses *[]common.Address, addr common.Address) {
+		for _, a := range *addresses {
+			if a == addr {
+				return
+			}
+		}
+		*addresses = append(*addresses, addr)
+	}
+
+	registerPrecompileAddress(&vm.PrecompiledAddressesBerlin, PoseidonAddress)
+	registerPrecompileAddress(&vm.PrecompiledAddressesIstanbul, PoseidonAddress)
+	registerPrecompileAddress(&vm.PrecompiledAddressesByzantium, PoseidonAddress)
+}
 
 // GetPrecompiles returns all the precompiled contracts defined given the
 // current chain configuration and block height.
