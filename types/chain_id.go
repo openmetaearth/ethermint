@@ -47,6 +47,27 @@ func IsValidChainID(chainID string) bool {
 	return ethermintChainID.MatchString(chainID)
 }
 
+const (
+	// Legacy mainnet genesis chain-id. Ethermint chain ids cannot contain '-'.
+	legacyCosmosChainID = "me-chain"
+	mainnetEVMChainID   = "mechain_2404-1"
+	defaultEVMChainNum  = 2404
+)
+
+// EVMChainID maps a Cosmos chain-id to the EIP-155 form ParseChainID accepts.
+// An id that is already valid is returned unchanged. The legacy mainnet id
+// "me-chain" becomes "mechain_2404-1".
+func EVMChainID(chainID string) string {
+	chainID = strings.TrimSpace(chainID)
+	if IsValidChainID(chainID) {
+		return chainID
+	}
+	if chainID == legacyCosmosChainID {
+		return mainnetEVMChainID
+	}
+	return fmt.Sprintf("%s_%d-1", chainID, defaultEVMChainNum)
+}
+
 // ParseChainID parses a string chain identifier's epoch to an Ethereum-compatible
 // chain-id in *big.Int format. The function returns an error if the chain-id has an invalid format
 func ParseChainID(chainID string) (*big.Int, error) {

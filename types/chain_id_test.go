@@ -8,6 +8,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestEVMChainID(t *testing.T) {
+	require.Equal(t, "mechain_2404-1", EVMChainID("me-chain"))
+	require.Equal(t, "mechain_2404-1", EVMChainID("mechain_2404-1"))
+	require.Equal(t, "mechain_2404-1", EVMChainID("mechain"))
+}
+
 func TestParseChainID(t *testing.T) {
 	testCases := []struct {
 		name     string

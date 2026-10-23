@@ -668,10 +668,10 @@ func startJSONRPCServer(
 		return ctx, httpSrv, httpSrvDone, err
 	}
 
-	ctx = clientCtx.WithChainID(genDoc.ChainID)
+	ctx = clientCtx.WithChainID(ethermint.EVMChainID(genDoc.ChainID))
 	cmtEndpoint := "/websocket"
 	g.Go(func() error {
-		httpSrv, httpSrvDone, err = StartJSONRPC(svrCtx, clientCtx, cmtRPCAddr, cmtEndpoint, &config, idxer)
+		httpSrv, httpSrvDone, err = StartJSONRPC(svrCtx, ctx, cmtRPCAddr, cmtEndpoint, &config, idxer)
 		return err
 	})
 	return
