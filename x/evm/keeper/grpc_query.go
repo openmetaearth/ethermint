@@ -405,6 +405,22 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "empty request")
 	}
+	if req.Msg == nil {
+		return nil, status.Error(codes.InvalidArgument, "msg is required")
+	}
+	if _, err := types.UnpackTxData(req.Msg.Data); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid msg data: %v", err)
+	}
+	// Validate before loading state or replaying any predecessor. AsTransaction
+	// returns nil when transaction data is missing or has not been unpacked.
+	for i, msg := range req.Predecessors {
+		if msg == nil {
+			return nil, status.Errorf(codes.InvalidArgument, "predecessors[%d] is required", i)
+		}
+		if _, err := types.UnpackTxData(msg.Data); err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "invalid predecessors[%d] data: %v", i, err)
+		}
+	}
 
 	if req.TraceConfig != nil && req.TraceConfig.Limit < 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "output limit cannot be negative, got %d", req.TraceConfig.Limit)

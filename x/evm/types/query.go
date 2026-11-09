@@ -21,10 +21,18 @@ import (
 
 // UnpackInterfaces implements UnpackInterfacesMesssage.UnpackInterfaces
 func (m QueryTraceTxRequest) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
+	// Missing messages are validated by the query handler. Decoding must be
+	// nil-safe because it runs before the gRPC recovery interceptor.
 	for _, msg := range m.Predecessors {
+		if msg == nil {
+			continue
+		}
 		if err := msg.UnpackInterfaces(unpacker); err != nil {
 			return err
 		}
+	}
+	if m.Msg == nil {
+		return nil
 	}
 	return m.Msg.UnpackInterfaces(unpacker)
 }
