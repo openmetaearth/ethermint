@@ -140,7 +140,15 @@ func (b *Backend) Sign(address common.Address, data hexutil.Bytes) (hexutil.Byte
 		return nil, err
 	}
 
-	signature[crypto.RecoveryIDOffset] += 27 // Transform V from 0/1 to 27/28 according to the yellow paper
+	return toRPCSignature(signature)
+}
+
+// toRPCSignature converts a keyring signature's recovery ID from 0/1 to 27/28 in place.
+func toRPCSignature(signature []byte) (hexutil.Bytes, error) {
+	if len(signature) != crypto.SignatureLength {
+		return nil, fmt.Errorf("invalid Ethereum signature length: got %d bytes, want %d (R || S || V)", len(signature), crypto.SignatureLength)
+	}
+	signature[crypto.RecoveryIDOffset] += 27
 	return signature, nil
 }
 
@@ -166,6 +174,5 @@ func (b *Backend) SignTypedData(address common.Address, typedData apitypes.Typed
 		return nil, err
 	}
 
-	signature[crypto.RecoveryIDOffset] += 27 // Transform V from 0/1 to 27/28 according to the yellow paper
-	return signature, nil
+	return toRPCSignature(signature)
 }

@@ -1,7 +1,9 @@
 package backend
 
 import (
+	"bytes"
 	"fmt"
+	"testing"
 
 	math "cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/crypto"
@@ -164,6 +166,24 @@ func (suite *BackendTestSuite) TestSendTransaction() {
 				suite.Require().Error(err)
 			}
 		})
+	}
+}
+
+func TestToRPCSignature(t *testing.T) {
+	for _, size := range []int{0, 64, 66} {
+		sig, err := toRPCSignature(make([]byte, size))
+		if err == nil || sig != nil {
+			t.Fatalf("length %d: expected an error and no signature, got %x, %v", size, sig, err)
+		}
+	}
+
+	rs := bytes.Repeat([]byte{0xab}, goethcrypto.RecoveryIDOffset)
+	for _, v := range []byte{0, 1} {
+		input := append(bytes.Clone(rs), v)
+		sig, err := toRPCSignature(input)
+		if err != nil || !bytes.Equal(sig, append(rs, v+27)) {
+			t.Fatalf("V=%d: unexpected RPC signature %x, error %v", v, sig, err)
+		}
 	}
 }
 
